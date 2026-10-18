@@ -86,6 +86,13 @@ ENTITY_TYPE_ALIASES: dict[str, str] = {
     "foreign limited liability company": "Foreign Entity",
     "limited partnership": "LP",
     "foreign limited partnership": "Foreign Entity",
+    # 通用缩写（数据供应商经常用缩写）
+    "llc": "LLC",
+    "ltd": "Corporation",
+    "inc": "Corporation",
+    "corp": "Corporation",
+    "llp": "LLP",
+    "lp": "LP",
 }
 
 

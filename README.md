@@ -15,7 +15,7 @@ Built with a **GEO adapter architecture**: each jurisdiction gets a small adapte
 | `SG` | Singapore | ACRA via data.gov.sg | ~1.5M | None |
 | `AU` | Australia | ASIC via data.gov.au | ~3.7M | None |
 | `US-FL` | USA (Florida) | Sunbiz SFTP | ~1.3M | None (public creds) |
-| `UK` | United Kingdom | Companies House API | ~5.5M | Free key (1 min) |
+| `UK` | United Kingdom | Companies House API | ~5.5M | Free key (1 min, see below) |
 
 Total coverage: **~12M+ entities**.
 

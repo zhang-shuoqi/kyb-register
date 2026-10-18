@@ -26,7 +26,7 @@ from adapters.uk_companies_house import UKCompaniesHouseAdapter
 # ── 初始化 MCP server ─────────────────────────────────────────
 mcp = FastMCP(
     name="kyb-register",
-    description=(
+    instructions=(
         "Global business registration verification for AI agents. "
         "Query official government registers across multiple jurisdictions "
         "for company status, filing dates, registered agents, and addresses."
@@ -36,6 +36,88 @@ mcp = FastMCP(
 
 # ── 适配器注册表（country → adapter 实例） ─────────────────────
 _adapters: dict[str, Any] = {}
+
+
+# ── 单一数据源：所有 GEO 元信息（list_supported_countries 和 _SUPPORTED_COUNTRIES 都从这里生成） ──
+_GEO_REGISTRY: list[dict[str, Any]] = [
+    {
+        "code": "SG",
+        "name": "Singapore",
+        "source": "ACRA via data.gov.sg",
+        "records": "~1.5M",
+        "update_frequency": "Monthly",
+        "auth_required": False,
+        "available": True,
+    },
+    {
+        "code": "AU",
+        "name": "Australia",
+        "source": "ASIC via data.gov.au",
+        "records": "~3.7M",
+        "update_frequency": "Weekly",
+        "auth_required": False,
+        "available": True,
+    },
+    {
+        "code": "US-FL",
+        "name": "United States (Florida)",
+        "source": "Sunbiz SFTP",
+        "records": "~1.3M",
+        "update_frequency": "Quarterly full + daily delta",
+        "auth_required": False,
+        "available": True,
+    },
+    {
+        "code": "UK",
+        "name": "United Kingdom",
+        "source": "Companies House API",
+        "records": "~5.5M",
+        "update_frequency": "Near real-time",
+        "auth_required": True,
+        "how_to_get_key": "https://developer.company-information.service.gov.uk/manage-applications",
+        "available": False,
+        "reason": "Requires free API key (1 min signup). Set CH_API_KEY env var to enable.",
+    },
+]
+
+# _SUPPORTED_COUNTRIES 只取 available=True 的 code
+_SUPPORTED_COUNTRIES = [g["code"] for g in _GEO_REGISTRY if g["available"]]
+
+
+# ── Tool 2: list_supported_countries ──────────────────────────
+@mcp.tool()
+def list_supported_countries() -> dict[str, Any]:
+    """Return all jurisdictions this server can query, with data source info.
+
+    Call this first if you are unsure which country code to use, or to confirm
+    data freshness and coverage before running a query.
+
+    Returns:
+        dict with:
+          - countries: list of GEO entries. Each has code, name, source, records,
+            update_frequency, auth_required (bool), available (bool).
+            When available is False, also has reason explaining what's needed.
+          - usage_hint: how to use this data.
+    """
+    return {
+        "countries": [
+            {
+                "code": g["code"],
+                "name": g["name"],
+                "source": g["source"],
+                "records": g["records"],
+                "update_frequency": g["update_frequency"],
+                "auth_required": g["auth_required"],
+                **({"how_to_get_key": g["how_to_get_key"]} if "how_to_get_key" in g else {}),
+                **({"reason": g["reason"]} if "reason" in g else {}),
+            }
+            for g in _GEO_REGISTRY if g["available"]
+        ],
+        "usage_hint": (
+            "Use the 'code' field as the country parameter in query_registration. "
+            "UK adapter exists internally but requires a free API key to enable."
+        ),
+    }
 
 
 def _init_adapter(country: str) -> Any:
@@ -57,9 +139,6 @@ def _init_adapter(country: str) -> Any:
             f"Supported: {', '.join(_SUPPORTED_COUNTRIES)}"
         )
     return _adapters[country]
-
-
-_SUPPORTED_COUNTRIES = ["SG", "AU", "US-FL", "UK"]
 
 
 # ── Tool 1: query_registration（统一入口） ────────────────────
@@ -136,54 +215,6 @@ def query_registration(
         "query": query,
         "count": len(results),
         "results": results,
-    }
-
-
-# ── Tool 2: list_supported_countries（让 agent 知道能查什么） ──
-@mcp.tool()
-def list_supported_countries() -> dict[str, Any]:
-    """Return all jurisdictions this server can query, with data source info.
-
-    Call this first if you are unsure which country code to use, or to confirm
-    data freshness and coverage before running a query.
-    """
-    return {
-        "countries": [
-            {
-                "code": "SG",
-                "name": "Singapore",
-                "source": "ACRA via data.gov.sg",
-                "records": "~1.5M",
-                "update_frequency": "Monthly",
-                "auth_required": False,
-            },
-            {
-                "code": "AU",
-                "name": "Australia",
-                "source": "ASIC via data.gov.au",
-                "records": "~3.7M",
-                "update_frequency": "Weekly",
-                "auth_required": False,
-            },
-            {
-                "code": "US-FL",
-                "name": "United States (Florida)",
-                "source": "Sunbiz SFTP",
-                "records": "~1.3M",
-                "update_frequency": "Quarterly full + daily delta",
-                "auth_required": False,
-            },
-            {
-                "code": "UK",
-                "name": "United Kingdom",
-                "source": "Companies House API",
-                "records": "~5.5M",
-                "update_frequency": "Near real-time",
-                "auth_required": True,
-                "how_to_get_key": "https://developer.company-information.service.gov.uk/manage-applications",
-            },
-        ],
-        "usage_hint": "Use the 'code' field as the country parameter in query_registration.",
     }
 
 
