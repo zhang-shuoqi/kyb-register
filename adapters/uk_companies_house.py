@@ -34,7 +34,7 @@ class UKCompaniesHouseAdapter:
 
     def search_by_name(self, name: str, limit: int = 20) -> list[dict[str, Any]]:
         resp = self._client.get(
-            f"{BASE}/companies/search",
+            f"{BASE}/search/companies",
             params={"q": name, "items_per_page": limit},
         )
         resp.raise_for_status()

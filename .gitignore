@@ -8,3 +8,4 @@ data/*.csv
 data/*.txt
 !data/.gitkeep
 _test*.py
+data/

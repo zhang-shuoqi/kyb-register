@@ -13,14 +13,19 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 from adapters.sg_acra import SGAcraAdapter
 from adapters.au_asic import AUAsicAdapter
 from adapters.us_fl_sunbiz import USFlSunbizAdapter
 from adapters.uk_companies_house import UKCompaniesHouseAdapter
+
+# ── 加载 .env（CH_API_KEY 等；文件在 .gitignore 里不进仓库） ──
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
 # ── 初始化 MCP server ─────────────────────────────────────────
