@@ -29,11 +29,34 @@
 | [460:700] | 注册代理人区（AP 标记 + First/Middle/Last 名） | AP / RANDOLPH / ROBERT / F |
 | [700:759] | 年报区（计数 + 最后年报日期） | ...09011996 |
 
-## cordata.zip（Corporation 主数据，1.7GB）
+## cordata.zip（Corporation+LLC 主数据，1.7GB，官方表实锤 2026-10-23）
 
-- 定宽但列布局**未确认**（与 Genfile 类似但字段更多）
-- 下载后用 `_analyze_fl.py` 同样方法确认：行长分布 → 日期锚点 → 切片验证
-- 确认后才写 import_fl.py
+- 10 个内层文件 cordata0-9.txt，**Deflate64（方法 9）**，须 Python 3.10 + zipfile_deflate64
+- 行定宽 **1440 字符**（zip 流内行尾 \n 故读出 1442），12,987,601 行零坏行
+- **官方 file-structure 权威表**（1-based 起始/长度，已逐项与实测咬合）：
+  https://dos.fl.gov/sunbiz/other-services/data-downloads/corporate-data-file/file-structure/
+  0-based 切片（入库 ingest_fl.py 采用）：
+  - [0:12] Corporation Number（变长，DOC_RE 解析；8 条已知变体走 fallback）
+  - [12:204] Corporation Name
+  - [204] Status（A=Active / I=Inactive，官方原文）
+  - [205:220] Filing Type（15 字符：DOMP/DOMNP/FORP/FORNP/DOMLP/FORLP/FLAL/FORL/NPREG/TRUST/AGENT）
+  - [220:262] Address 1、[262:304] Address 2、[304:332] City、[332:334] State、[334:344] Zip（含 ZIP+4）
+  - [472:480] **File Date**（MMDDYYYY，'00000000'=空）——即注册/成立日期
+  - [480:494] FEI Number、[495:503] Last Transaction Date、[503:505] State Country
+  - [505:586] 近三年年报区（Report Year/Date ×3）
+  - [544:586] Registered Agent Name、[586:660] RA Type/Address/City/State/Zip
+  - [669:1436] Officers ×6（Title/Type/Name/Address/City/State/Zip+4）
+- ⚠️ 历史错误存档：本文件旧版曾写"[462:470] 注册日期"——那实为官方 **Mail Zip** 字段（[460:470]），系当年把邮寄邮编误当注册日期，已被官方表推翻废弃
+- 实测行复核：L16000216990（FLIP THAT REO LLC）File Date=2016-11-30 与发号年 L16 自洽；[495:503]=Last Transaction Date 与官方字段名咬合
+- 已知变体：8 条文档号格式变体（单数字/小写前缀/字母 O 冒充 0）、FEI 可为 'NOT APPLI'/全 0、个别未来日期源数据伪影（如 07/16/2120）
+- 文档号前两位 ≈ 发号年（L25=2025 注册）；**主库快照存在水位**（本次 L26 最大序号 501467），快照后新发号只在日文件里
+
+## 日文件双轨（doc/cor/ 实测 2026-10-23）
+
+- `doc/cor/YYYYMMDDc.txt` = **当日新发号**（current filings）：100% 当年号段（L26/P26...），含 reinstatement 老公司新发号（原注册日照常显示）
+- `doc/cor/Events/YYYYMMDDce.txt` = **当日事件**（全事件流，各年号段）：行格式 ≠ 主记录！布局 = 文档号 + 5位序号 + 事件代码(CORAPREIN等) + 事件描述(REINSTATEMENT/DISSOLUTION/AMENDMENT...) + 8位事件日期。**不能按 1440 主布局解析**
+- 相邻两天 ce 文件可字节级相同（滚动窗口，非严格日增量）
+- diff 管道数据源 = c（新实体）+ ce（状态/名称事件）双文件互补
 
 ## SFTP 结构
 

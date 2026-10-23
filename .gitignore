@@ -9,3 +9,4 @@ data/*.txt
 !data/.gitkeep
 _test*.py
 data/
+*.log

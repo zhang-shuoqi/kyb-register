@@ -33,6 +33,7 @@ while True:
         if resume >= total:
             log(f"✅ COMPLETE: {total/1024/1024:.0f} MB after {attempt} attempts, {time.time()-t_start:.0f}s total")
             sftp.close(); transport.close()
+            Path(__file__).parent.joinpath("data", "done_fl.flag").write_text("ok")
             break
 
         log(f"attempt {attempt}: {resume/1024/1024:.0f}/{total/1024/1024:.0f} MB, resuming...")

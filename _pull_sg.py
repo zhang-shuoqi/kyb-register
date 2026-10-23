@@ -65,7 +65,9 @@ def main():
     grand_total = 0
 
     for idx, rid in enumerate(SHARDS):
-        st = prog.get(rid, {"offset": 0, "done": False})
+        if rid not in prog:
+            prog[rid] = {"offset": 0, "done": False}
+        st = prog[rid]  # 引用 prog 内的 dict，修改会真实落盘
         if st.get("done"):
             grand_total += st.get("rows", 0)
             continue
@@ -106,6 +108,7 @@ def main():
 
     wfile.close()
     log(f"🎉 ALL SHARDS COMPLETE: {grand_total} rows in {time.time()-t0:.0f}s")
+    Path(__file__).parent.joinpath("data", "done_sg.flag").write_text("ok")
 
 
 if __name__ == "__main__":

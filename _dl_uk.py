@@ -65,3 +65,4 @@ for i in range(1, 8):
             time.sleep(15)
 
 log("ALL 7 PARTS COMPLETE")
+Path(__file__).parent.joinpath("data", "done_uk.flag").write_text("ok")
